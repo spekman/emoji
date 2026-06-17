@@ -1,15 +1,34 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import * as Font from 'expo-font';
+import { Slot } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useState } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+export default function Layout() {
+  const [isReady, setIsReady] = useState(false);
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  useEffect(() => {
+    async function prepare() {
+      try {
+        await Font.loadAsync({});
+      } catch (error) {
+        console.warn('Error loading app resources', error);
+      } finally {
+        await SplashScreen.hideAsync();
+        setIsReady(true);
+      }
+    }
+
+    prepare();
+  }, []);
+
+  if (!isReady) {
+    return null;
+  }
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <Slot />
+    </SafeAreaProvider>
   );
 }

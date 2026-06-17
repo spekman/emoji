@@ -1,56 +1,123 @@
-# Welcome to your Expo app 👋
+# 📱 Emoji: O Filme: O Jogo
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Este projeto é uma aplicação mobile de **Virtual Pet** desenvolvida como parte dos requisitos acadêmicos de avaliação. O jogo desafia o conceito tradicional de pets fofos, o trazendo em formato de **Emoji**. O pet não aceita mensagens de texto (ainda), mas faz questão de inundar o chat com notificações e balões de texto reclamando do seu estado de saúde, fome e da sua incompetência como dono.
 
-## Get started
+---
 
-1. Install dependencies
+## 🎯 Objetivos Acadêmicos
 
-   ```bash
-   npm install
-   ```
+A aplicação foi estruturada especificamente para validar e demonstrar os seguintes conceitos de engenharia de software:
 
-2. Start the app
+- **Arquitetura Cliente-Servidor:** Separação estrita entre regras de negócio/persistência (Backend) e interface/experiência do utilizador (Frontend).
+- **Consumo de API & CRUD:** Implementação completa de operações de criação, leitura e atualização de estados via requisições HTTP RESTful.
+- **Autenticação:** Controlo de acessos seguro utilizando tokens JWT (JSON Web Tokens).
+- **UI/UX e Responsividade:** Interface familiar baseada em componentes nativos, garantindo fluidez e adaptabilidade a diferentes telas.
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## 🕹️ Funcionalidades Principais
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 1. Interface Estilo Chat
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Header Dinâmico:** Apresenta a "foto de perfil" (o emoji do pet), o nome escolhido pelo utilizador e o estado atual (ex: _"online"_ ou _"digitando..."_).
+- **Histórico de Conversa (`FlatList`):** Área central onde as ações do utilizador (dar comida, carinho, ...) e as respostas reativas do pet são registadas como balões de chat cronológicos.
 
-## Get a fresh project
+### 2. Menu de Interações Rápidas
 
-When you're ready, run:
+Em vez de um teclado, o rodapé exibe botões de ação baseados em emojis para gerir alguns dos status do pet:
+
+- **🫱 Fazer Carinho:** Aumenta ligeiramente a barra de felicidade.
+- **🍕 Alimentar:** Reduz os níveis de fome.
+- **🚿 Limpar:** Arraste o emoji do chuveiro sobre um emoji de cocô para limpar o pet. Cada cocô eliminado aumenta a limpeza em 10%.
+- **💤 Dormir:** Arraste o emoji de `zzz` sobre o pet para fazê-lo dormir. Pet dormindo não reage a nenhuma interação. Clique no pet para acordá-lo (aumenta energia em 30%).
+
+---
+
+## 📋 Requisitos do Sistema
+
+### Requisitos Funcionais (RF)
+
+- **RF-001 [Autenticação]:** O utilizador deve conseguir criar uma conta e autenticar-se para carregar o progresso do seu pet de forma segura.
+- **RF-002 [Criação do Pet]:** No primeiro acesso, o utilizador deve escolher o nome e o Emoji de perfil do pet.
+- **RF-003 [Ciclo de Vida/Status]:** O sistema deve computar continuamente a degradação dos status de fome, energia, limpeza e felicidade do pet.
+- **RF-004 [Mensagens de Alerta]:** O pet deve enviar mensagens automáticas no chat sempre que um dos seus status atingir níveis críticos.
+
+### Requisitos Não-Funcionais (RNF)
+
+- **RNF-001 [Arquitetura]:** O Frontend não deve calcular ou guardar o estado definitivo do pet; toda a lógica de negócio deve ser processada no Backend. (To-Do)
+- **RNF-002 [Persistência]:** Os dados do utilizador, do pet e as configurações de customização devem ser guardados de forma persistente numa base de dados relacional ou não-relacional através do Backend. (To-Do)
+- **RNF-003 [Segurança]:** As rotas da API que alteram o estado do pet devem exigir um cabeçalho de autorização com um token JWT válido. (To-Do)
+
+---
+
+## 🛠️ Stack
+
+- **Frontend:** React Native (Expo) + TypeScript
+- **Backend:** Spring Boot (Java)
+- **Comunicação:** REST API (JSON)
+- **Segurança:** Spring Security + JWT
+
+---
+
+## 📚 Documentação do Código
+
+Esta seção descreve a organização do frontend e as decisões técnicas importantes.
+
+- **Componentes principais**:
+  - `Header` (src/components/Header): Componente visual; recebe `pet` por props
+    e não contém lógica de negócio.
+  - `MessageList` (src/components/MessageList): Usa `FlatList` para renderizar o histórico
+    de mensagens.
+  - `Footer` (src/components/Footer): Fonte de interações rápidas (carinho, comida, chuveiro, dormir).
+    Inicia drags e mostra preview do item arrastado; delega a lógica de drop ao hook.
+  - `PetEmoji` (src/components/PetEmoji): Renderiza o emoji do pet com animações.
+    Usa `react-native-reanimated` para animações e `dropZoneRef` para medir a
+    área de drop do pet. Permite clicar para acordar o pet quando dormindo.
+  - `PooEmojiContainer` (src/components/PooEmojiContainer): Renderiza emojis de cocô na tela
+    e detecta colisão com o chuveiro para limpeza automática.
+
+- **Hooks importantes**:
+  - `usePetState` (src/hooks/usePetState.ts): Encapsula estado do pet, mensagens, e sono.
+    Funções principais:
+    - `handleInteraction(type)`: Processa petting/feeding e gera mensagens
+    - `pettingHover()`: Feedback visual leve sem mensagem
+    - `handleCleanPoo()`: Aumenta limpeza em 10% ao eliminar cocô
+    - `handleSleep()`: Faz o pet dormir (emoji = sleeping-face, bloqueia drag)
+    - `handleWakeUp()`: Acorda o pet (restaura emoji anterior, +30 energia)
+  - `useDragInteraction` (src/hooks/useDragInteraction.ts): Gerencia drag/drop,
+    mede `dropZone` via `measureInWindow`, usa `PanResponder` e introduz um leve
+    throttle no evento de hover para evitar chamadas excessivas.
+    `isSleeping` bloqueia novos drags quando pet dorme.
+  - `usePooEmojis` (src/hooks/usePooEmojis.ts): Gerencia spawn/remoção de cocôs.
+
+## 🛠️ Desenvolvimento
+
+1. Instalar dependências:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+1. Rodar em modo de desenvolvimento (com Expo):
 
-### Other setup steps
+```bash
+npm start
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+1. Notas de desenvolvimento:
 
-## Learn more
+- O frontend atualmente faz mocking do backend para permitir iteração rápida.
+- Para migrar para um backend real, substituir as atualizações locais em
+  `usePetState` por chamadas à API e manter o mesmo shape de dados.
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🧭 Padrões e decisões
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Separação UI/negócio: componentes são preferencialmente sem estado; hooks
+  encapsulam estado e lógica. Isso facilita testes unitários e extração futura.
+- Performance: `FlatList` e `react-native-reanimated` foram escolhidos por
+  minimizar trabalho no thread JS e melhorar fluidez em animações e listas.
+- Estilo: `react-native-ico-noto-emojis` foi escolhido para manter a qualidade
+  e consistência dos emojis independente da resolução da tela ou sistema
+  operacional. (`https://ico.simpleness.org/pack/noto-emojis`)
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---

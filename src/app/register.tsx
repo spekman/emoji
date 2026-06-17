@@ -1,30 +1,35 @@
 import { AuthScreenLayout } from '@/components/AuthScreenLayout';
-import { theme } from '@/constants/theme';
+import { emojiAvatarStyle, theme } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function LoginScreen() {
+const emojiOptions = ['🐶', '🐱', '🦊', '🐯', '🦄', '🐙']; // implementar `rn-emoji-keyboard` depois
+const EMOJI_SIZE = 48;
+
+export default function RegisterScreen() {
     const router = useRouter();
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
+    const [petName, setPetName] = useState('');
+    const [petEmoji, setPetEmoji] = useState(emojiOptions[0]);
     const [error, setError] = useState('');
 
-    const handleLogin = () => {
-        if (!identifier.trim() || !password.trim()) {
-            setError('Informe email ou nome de usuário e senha.');
+    const handleRegister = () => {
+        if (!identifier.trim() || !password.trim() || !petName.trim()) {
+            setError('Preencha todos os campos antes de continuar.');
             return;
         }
 
         setError('');
-        router.push('/chatScreen');
+        router.push(`/chatScreen?name=${encodeURIComponent(petName)}&baseEmoji=${encodeURIComponent(petEmoji)}`);
     };
 
     return (
         <AuthScreenLayout>
-            <Text selectable style={styles.title}>Entrar</Text>
+            <Text selectable style={styles.title}>Criar conta</Text>
             <Text selectable style={styles.description}>
-                Use email ou nome de usuário e senha para acessar o seu pet.
+                Cadastre-se com email ou nome de usuário, senha e escolha um ícone para seu pet.
             </Text>
 
             <TextInput
@@ -35,7 +40,6 @@ export default function LoginScreen() {
                 onChangeText={setIdentifier}
                 autoCapitalize="none"
                 keyboardType="email-address"
-                textContentType="username"
             />
             <TextInput
                 style={styles.input}
@@ -44,12 +48,35 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
-                textContentType="password"
             />
+
+            <TextInput
+                style={styles.input}
+                placeholder="Nome do pet"
+                placeholderTextColor={theme.colors.textMuted}
+                value={petName}
+                onChangeText={setPetName}
+            />
+
+            <Text selectable style={styles.label}>Escolha o emoji do pet</Text>
+            <View style={styles.emojiRow}>
+                {emojiOptions.map((emoji) => (
+                    <TouchableOpacity
+                        key={emoji}
+                        style={[
+                            styles.emojiButton,
+                            petEmoji === emoji && styles.emojiButtonSelected,
+                        ]}
+                        onPress={() => setPetEmoji(emoji)}
+                    >
+                        <Text style={[styles.emojiText, emojiAvatarStyle(EMOJI_SIZE)]}>{emoji}</Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
 
             {error ? <Text selectable style={styles.error}>{error}</Text> : null}
 
-            <TouchableOpacity onPress={handleLogin} activeOpacity={0.85}>
+            <TouchableOpacity onPress={handleRegister} activeOpacity={0.85}>
                 <View
                     style={[
                         styles.button,
@@ -59,14 +86,14 @@ export default function LoginScreen() {
                         },
                     ]}
                 >
-                    <Text selectable style={styles.buttonText}>Entrar</Text>
+                    <Text selectable style={styles.buttonText}>Registrar</Text>
                 </View>
             </TouchableOpacity>
 
             <View style={styles.footer}>
-                <Text selectable style={styles.footerText}>Ainda não tem uma conta?</Text>
-                <TouchableOpacity onPress={() => router.push('/register')}>
-                    <Text selectable style={styles.linkText}>Criar conta</Text>
+                <Text selectable style={styles.footerText}>Já tem conta?</Text>
+                <TouchableOpacity onPress={() => router.back()}>
+                    <Text selectable style={styles.linkText}>Voltar para entrar</Text>
                 </TouchableOpacity>
             </View>
         </AuthScreenLayout>
@@ -97,6 +124,34 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.inputBg,
         color: theme.colors.textPrimary,
     },
+    label: {
+        color: theme.colors.textSecondary,
+        fontWeight: '600',
+        marginBottom: 12,
+    },
+    emojiRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        marginBottom: 20,
+    },
+    emojiButton: {
+        width: EMOJI_SIZE,
+        height: EMOJI_SIZE,
+        borderRadius: 14,
+        borderCurve: 'continuous',
+        backgroundColor: theme.colors.inputBg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.inputBorder,
+        overflow: 'hidden',
+    },
+    emojiButtonSelected: {
+        borderColor: theme.colors.emojiSelectedBorder,
+        backgroundColor: theme.colors.emojiSelected,
+    },
+    emojiText: {},
     button: {
         height: 48,
         borderRadius: 14,
