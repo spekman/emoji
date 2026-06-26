@@ -1,6 +1,6 @@
 # 📱 Emoji: O Filme: O Jogo
 
-Este projeto é uma aplicação mobile de **Virtual Pet** desenvolvida como parte dos requisitos acadêmicos de avaliação. O jogo desafia o conceito tradicional de pets fofos, o trazendo em formato de **Emoji**. O pet não aceita mensagens de texto (ainda), mas faz questão de inundar o chat com notificações e balões de texto reclamando do seu estado de saúde, fome e da sua incompetência como dono.
+Este projeto é uma aplicação de **Virtual Pet** desenvolvida como parte dos requisitos acadêmicos de avaliação. O jogo desafia o conceito tradicional de pets fofos, trazendo-o no formato de um **Emoji**. O pet não aceita mensagens de texto, mas faz questão de inundar o chat com notificações reclamando do seu estado de saúde, fome e da sua incompetência como dono.
 
 ---
 
@@ -8,28 +8,63 @@ Este projeto é uma aplicação mobile de **Virtual Pet** desenvolvida como part
 
 A aplicação foi estruturada especificamente para validar e demonstrar os seguintes conceitos de engenharia de software:
 
-- **Arquitetura Cliente-Servidor:** Separação estrita entre regras de negócio/persistência (Backend) e interface/experiência do utilizador (Frontend).
-- **Consumo de API & CRUD:** Implementação completa de operações de criação, leitura e atualização de estados via requisições HTTP RESTful.
-- **Autenticação:** Controlo de acessos seguro utilizando tokens JWT (JSON Web Tokens).
-- **UI/UX e Responsividade:** Interface familiar baseada em componentes nativos, garantindo fluidez e adaptabilidade a diferentes telas.
+- **Arquitetura Cliente-Servidor Estrita:** Isolamento total entre as regras de negócio/persistência no servidor (Backend) e a experiência de interface do utilizador (Frontend Mobile).
+- **Consumo de API RESTful:** Implementação completa de operações de leitura (`GET`) e atualização (`PUT`) de estados via requisições assíncronas utilizando HTTP JSON.
+- **Autenticação Baseada em Token:** Controle de acesso seguro e proteção de rotas utilizando tokens **JWT (JSON Web Tokens)**.
+- **Princípios SOLID e Clean Code:** Componentização desacoplada, uso de **Estado Derivado** para eliminar redundâncias e isolamento de regras em funções puras.
+
+---
+
+## 📁 Estrutura do Projeto (Arquitetura)
+
+O ecossistema é dividido em dois projetos completamente independentes localizados em diretórios irmãos na raiz do repositório:
+
+```text
+📂 emoji/
+ ├── 📂 frontend/                 <-- Aplicação Mobile em React Native (Expo)
+ │    ├── 📂 app/                 <-- Sistema de Roteamento Plano (Expo Router)
+ │    ├── 📂 src/components/      <-- Componentes Visuais desacoplados
+ │    ├── 📂 src/hooks/           <-- Hooks de controle e efeitos colaterais
+ │    └── 📂 src/context/         <-- Contexto global de autenticação e tokens
+ │
+ └── 📂 backend/                  <-- Servidor RESTful em Spring Boot (Java 17+)
+      ├── 📂 src/main/java/       <-- Código-fonte estruturado em Camadas
+      │    ├── 📂 config/         <-- Filtros e Beans do Spring Security + JWT
+      │    ├── 📂 controller/     <-- Endpoints e Controladores REST
+      │    ├── 📂 domain/         <-- Entidades JPA de mapeamento de tabelas
+      │    ├── 📂 dto/            <-- Records imutáveis para transferência de dados
+      │    ├── 📂 repository/     <-- Interfaces JpaRepository (Banco H2)
+      │    └── 📂 service/        <-- Camada isolada com as Regras de Negócio
+      └── pom.xml                 <-- Gerenciador de Dependências Maven
+```
 
 ---
 
 ## 🕹️ Funcionalidades Principais
 
-### 1. Interface Estilo Chat
+### 1. Interface Estilo Chat & Estado Derivado
 
-- **Header Dinâmico:** Apresenta a "foto de perfil" (o emoji do pet), o nome escolhido pelo utilizador e o estado atual (ex: _"online"_ ou _"digitando..."_).
-- **Histórico de Conversa (`FlatList`):** Área central onde as ações do utilizador (dar comida, carinho, ...) e as respostas reativas do pet são registadas como balões de chat cronológicos.
+- **Header Dinâmico:** Apresenta a foto de perfil do pet, nome do usuário e o status de digitação.
 
-### 2. Menu de Interações Rápidas
+- **Árvore de Decisão Visual (Humores):** O emoji exibido pelo pet não fica salvo no banco de dados. O Frontend roda uma função utilitária pura que calcula dinamicamente qual carinha exibir (ex: drooling-face para fome ou nauseated-face para sujeira) baseando-se estritamente na combinação matemática dos 4 status numéricos recebidos do servidor.
 
-Em vez de um teclado, o rodapé exibe botões de ação baseados em emojis para gerir alguns dos status do pet:
+- **Histórico de Conversa (FlatList):** Área central performática onde as interações do usuário (dar comida, carinho) e as respostas automáticas do pet são registradas de forma cronológica.
 
-- **🫱 Fazer Carinho:** Aumenta ligeiramente a barra de felicidade.
-- **🍕 Alimentar:** Reduz os níveis de fome.
-- **🚿 Limpar:** Arraste o emoji do chuveiro sobre um emoji de cocô para limpar o pet. Cada cocô eliminado aumenta a limpeza em 10%.
-- **💤 Dormir:** Arraste o emoji de `zzz` sobre o pet para fazê-lo dormir. Pet dormindo não reage a nenhuma interação. Clique no pet para acordá-lo (aumenta energia em 30%).
+### 2. Menu de Interações Rápidas e Gestão de Status
+
+- **🍕 Alimentar:** Dispara um pedido HTTP que reduz o nível de fome (hunger) no banco de dados e ativa o emoji temporário de degustação.
+
+- **🫱 Fazer Carinho:** Aumenta a barra de felicidade (happiness).
+
+- **🚿 Limpeza Dinâmica:** O container de cocôs ocupa a tela inteira em modo invisível (pointerEvents="box-none"). Arrastar o chuveirinho sobre os cocôs dispara uma colisão geométrica absoluta que elimina o item e incrementa a higiene (cleanliness) em 10% via API.
+
+- **💤 Ciclo de Sono:** Arrastar o ícone de zzz faz o pet dormir, bloqueando novas interações. Um clique sobre o pet o acorda, gerando mensagens e recuperando 30% de energia.
+
+### 3. Sistema de Customização (Loja de Acessórios)
+
+- O aplicativo conta com uma Bottom Sheet nativa (`Modal`) que lista os acessórios disponíveis (Cartola, Óculos Escuros, etc.).
+
+- Cada acessório possui um dicionário estático no Frontend contendo seu `sizeRatio` e offsets (`top`, `left`) para um encaixe geométrico milimétrico sobre o rosto do emoji base, salvando apenas o identificador textual do item no banco do servidor.
 
 ---
 
@@ -37,87 +72,65 @@ Em vez de um teclado, o rodapé exibe botões de ação baseados em emojis para 
 
 ### Requisitos Funcionais (RF)
 
-- **RF-001 [Autenticação]:** O utilizador deve conseguir criar uma conta e autenticar-se para carregar o progresso do seu pet de forma segura.
-- **RF-002 [Criação do Pet]:** No primeiro acesso, o utilizador deve escolher o nome e o Emoji de perfil do pet.
-- **RF-003 [Ciclo de Vida/Status]:** O sistema deve computar continuamente a degradação dos status de fome, energia, limpeza e felicidade do pet.
-- **RF-004 [Mensagens de Alerta]:** O pet deve enviar mensagens automáticas no chat sempre que um dos seus status atingir níveis críticos.
+- **RF-001 [Autenticação]:** O utilizador deve conseguir cadastrar uma conta e autenticar-se via credenciais exclusivas para receber um Token JWT.
+
+- **RF-002 [Persistência de Status]:** Os status de fome, felicidade, energia e higiene devem ser mantidos de forma persistente através do Backend.
+
+- **RF-003 [Customização]:** O utilizador deve poder adquirir, equipar e remover acessórios cosméticos no pet, mantendo o estado salvo após fechar o app.
 
 ### Requisitos Não-Funcionais (RNF)
 
-- **RNF-001 [Arquitetura]:** O Frontend não deve calcular ou guardar o estado definitivo do pet; toda a lógica de negócio deve ser processada no Backend. (To-Do)
-- **RNF-002 [Persistência]:** Os dados do utilizador, do pet e as configurações de customização devem ser guardados de forma persistente numa base de dados relacional ou não-relacional através do Backend. (To-Do)
-- **RNF-003 [Segurança]:** As rotas da API que alteram o estado do pet devem exigir um cabeçalho de autorização com um token JWT válido. (To-Do)
+- **RNF-001 [Segurança da API]:** Todas as rotas sob o escopo `/api/pets/` devem ser bloqueadas pelo Spring Security, exigindo um token no formato Bearer `<TOKEN>`.
+
+- **RNF-002 [Criptografia]:** O banco de dados nunca deve armazenar senhas em texto puro; o Backend deve aplicar hash irreversível via algoritmo BCrypt.
+
+- **RNF-003 [Armazenamento Local]:** O Token JWT de sessão deve ser mantido no celular de forma criptografada usando o `Expo SecureStore` (Chaveiro Nativo do SO) substituindo o armazenamento frágil do `AsyncStorage`.
+
+- **RNF-004 [Navegação Blindada]:** O app deve interceptar a inicialização. Caso o token no `SecureStore` seja inválido ou ausente, o usuário é redirecionado de forma condicional para a tela de Login, impedindo o acesso forçado ao chat do jogo.
 
 ---
 
-## 🛠️ Stack
+## 🛠️ Stack Tecnológica
 
-- **Frontend:** React Native (Expo) + TypeScript
-- **Backend:** Spring Boot (Java)
-- **Comunicação:** REST API (JSON)
-- **Segurança:** Spring Security + JWT
+- **Frontend Mobile:** React Native (Expo SDK) + TypeScript + Expo Router
+
+- **Animações e Ícones:** `react-native-reanimated` + `react-native-ico-noto-emojis`
+
+- **Cliente HTTP:** Axios (com injeção automática de Headers via interceptor de Contexto)
+
+- **Backend:** Spring Boot (Java 17) + Spring Security
+
+- **Persistência Local:** Hibernate/JPA + Banco de Dados H2 (Em memória para desenvolvimento)
+
+- **Emissão de Tokens:** Java JWT (JJWT - io.jsonwebtoken)
 
 ---
 
-## 📚 Documentação do Código
+## 🧭 Executando o Projeto em Desenvolvimento
 
-Esta seção descreve a organização do frontend e as decisões técnicas importantes.
+Para rodar a aplicação integrada localmente, você precisará iniciar o servidor e o emulador em terminais distintos.
 
-- **Componentes principais**:
-  - `Header` (src/components/Header): Componente visual; recebe `pet` por props
-    e não contém lógica de negócio.
-  - `MessageList` (src/components/MessageList): Usa `FlatList` para renderizar o histórico
-    de mensagens.
-  - `Footer` (src/components/Footer): Fonte de interações rápidas (carinho, comida, chuveiro, dormir).
-    Inicia drags e mostra preview do item arrastado; delega a lógica de drop ao hook.
-  - `PetEmoji` (src/components/PetEmoji): Renderiza o emoji do pet com animações.
-    Usa `react-native-reanimated` para animações e `dropZoneRef` para medir a
-    área de drop do pet. Permite clicar para acordar o pet quando dormindo.
-  - `PooEmojiContainer` (src/components/PooEmojiContainer): Renderiza emojis de cocô na tela
-    e detecta colisão com o chuveiro para limpeza automática.
+### 1. Iniciando o Backend (Servidor)
 
-- **Hooks importantes**:
-  - `usePetState` (src/hooks/usePetState.ts): Encapsula estado do pet, mensagens, e sono.
-    Funções principais:
-    - `handleInteraction(type)`: Processa petting/feeding e gera mensagens
-    - `pettingHover()`: Feedback visual leve sem mensagem
-    - `handleCleanPoo()`: Aumenta limpeza em 10% ao eliminar cocô
-    - `handleSleep()`: Faz o pet dormir (emoji = sleeping-face, bloqueia drag)
-    - `handleWakeUp()`: Acorda o pet (restaura emoji anterior, +30 energia)
-  - `useDragInteraction` (src/hooks/useDragInteraction.ts): Gerencia drag/drop,
-    mede `dropZone` via `measureInWindow`, usa `PanResponder` e introduz um leve
-    throttle no evento de hover para evitar chamadas excessivas.
-    `isSleeping` bloqueia novos drags quando pet dorme.
-  - `usePooEmojis` (src/hooks/usePooEmojis.ts): Gerencia spawn/remoção de cocôs.
-
-## 🛠️ Desenvolvimento
-
-1. Instalar dependências:
+Navegue até a pasta `backend` na sua IDE ou via terminal e execute:
 
 ```bash
-npm install
+ ./mvnw spring-boot:run
 ```
 
-1. Rodar em modo de desenvolvimento (com Expo):
+O servidor inicializará e ficará escutando na porta `8080`. O banco de dados H2 será criado automaticamente em memória.
+
+### 2. Iniciando o Frontend (Mobile)
+
+Abra um terminal separado na pasta frontend.
+
+Nota de Rede importante: No arquivo `src/context/AuthContext.tsx`, certifique-se de que a `API_URL` está configurada como `http://10.0.2.2:8080` se estiver testando em emulador Android ou `http://localhost:8080` se estiver no iOS.
+
+Instale as dependências e inicie o Metro Bundler:
 
 ```bash
-npm start
+  npm install
+  npx expo start
 ```
 
-1. Notas de desenvolvimento:
-
-- O frontend atualmente faz mocking do backend para permitir iteração rápida.
-- Para migrar para um backend real, substituir as atualizações locais em
-  `usePetState` por chamadas à API e manter o mesmo shape de dados.
-
-## 🧭 Padrões e decisões
-
-- Separação UI/negócio: componentes são preferencialmente sem estado; hooks
-  encapsulam estado e lógica. Isso facilita testes unitários e extração futura.
-- Performance: `FlatList` e `react-native-reanimated` foram escolhidos por
-  minimizar trabalho no thread JS e melhorar fluidez em animações e listas.
-- Estilo: `react-native-ico-noto-emojis` foi escolhido para manter a qualidade
-  e consistência dos emojis independente da resolução da tela ou sistema
-  operacional. (`https://ico.simpleness.org/pack/noto-emojis`)
-
----
+Pressione `a` para abrir no emulador Android ou `i` para o emulador iOS.
